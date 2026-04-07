@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Story Tool">
+<meta name="theme-color" content="#1C3557">
+<title>Workshop Story Tool</title>
+<style id="themeStyle"></style>
+<style id="baseStyle">
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1C3557;--navy2:#253F62;
+  --radius:10px;--radius-sm:6px;
+  --mono:'Courier New',Courier,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --fs:14px;--spacing:1;
+}
+html{height:100%;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100%;display:flex;flex-direction:column;align-items:center;-webkit-font-smoothing:antialiased;transition:background 0.2s,color 0.2s;}
+.app{width:100%;max-width:640px;display:flex;flex-direction:column;background:var(--surface);min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,0.1);}
+/* Header */
+.hdr{background:var(--accent);padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.hdr-title{font-size:16px;font-weight:600;color:#fff;letter-spacing:0.01em;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:var(--radius-sm);color:#fff;font-size:12px;font-family:var(--sans);padding:5px 11px;cursor:pointer;transition:background 0.15s;}
+.hdr-btn:hover{background:rgba(255,255,255,0.22);}
+.hdr-btn.active{background:rgba(255,255,255,0.3);border-color:rgba(255,255,255,0.55);}
+/* API bar */
+.api-bar{display:flex;align-items:center;gap:7px;padding:7px 16px;font-size:12px;font-weight:500;}
+.api-bar.ok{background:var(--yesbg);color:var(--yestxt);}
+.api-bar.none{background:var(--warnbg);color:var(--warntxt);}
+.api-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;}
+/* RO bar */
+.ro-bar{background:var(--accent2);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ro-label{font-size:12px;color:rgba(255,255,255,0.6);white-space:nowrap;}
+.ro-input{width:130px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:var(--radius-sm);padding:6px 10px;color:#fff;font-size:13px;font-family:var(--mono);outline:none;}
+.ro-input::placeholder{color:rgba(255,255,255,0.3);}
+.ro-input:focus{border-color:rgba(255,255,255,0.6);}
+.ro-btn,.clear-btn{padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--sans);cursor:pointer;transition:background 0.15s;}
+.ro-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);color:#fff;}
+.ro-btn:hover{background:rgba(255,255,255,0.25);}
+.clear-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.6);}
+.clear-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.ro-status{font-size:11px;color:rgba(255,255,255,0.45);margin-left:auto;}
+/* Panels */
+.panel{display:none;flex:1;flex-direction:column;}
+.panel.active{display:flex;}
+.panel-body{padding:16px;display:flex;flex-direction:column;gap:calc(14px * var(--spacing));flex:1;}
+/* Labels */
+.slabel{font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+/* Textarea */
+textarea.inp{width:100%;min-height:100px;border:1.5px solid var(--border);border-radius:var(--radius);padding:11px 13px;font-size:var(--fs);font-family:var(--story-font,var(--sans));color:var(--text);resize:vertical;background:var(--input-bg);line-height:1.55;outline:none;transition:border-color 0.15s,background 0.2s;}
+textarea.inp:focus{border-color:var(--accent);background:var(--surface);}
+textarea.inp::placeholder{color:var(--placeholder);}
+.word-hint{font-size:11px;color:var(--muted);margin-top:4px;text-align:right;}
+/* Buttons */
+.btn-row{display:flex;gap:8px;margin-top:8px;}
+.voice-btn{display:flex;align-items:center;gap:6px;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.voice-btn:hover{border-color:var(--accent);color:var(--accent);}
+.voice-btn.rec{background:var(--redbg);border-color:var(--red);color:var(--red);animation:pulse 1.1s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.mic-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.gen-btn{flex:1;padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.gen-btn:hover:not(:disabled){opacity:0.87;}
+.gen-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.voice-note{font-size:12px;color:var(--muted);margin-top:5px;display:none;}
+/* Alerts */
+.alert{padding:10px 13px;border-radius:var(--radius);font-size:13px;line-height:1.5;display:none;}
+.alert.show{display:block;}
+.alert.danger{background:var(--redbg);border:1px solid var(--redbdr);color:var(--redtxt);}
+.alert.warn{background:var(--warnbg);border:1px solid var(--warnbdr);color:var(--warntxt);}
+.alert.info{background:var(--infobg);border:1px solid var(--infobdr);color:var(--infotxt);}
+.alert-title{font-weight:600;margin-bottom:3px;}
+.loading{display:none;align-items:center;gap:9px;padding:10px 13px;background:var(--warnbg);border:1px solid var(--warnbdr);border-radius:var(--radius);font-size:13px;color:var(--warntxt);font-weight:500;}
+.loading.show{display:flex;}
+.spin{width:14px;height:14px;border:2px solid var(--warnbdr);border-top-color:var(--warntxt);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* Story type selector */
+.type-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.type-label{font-size:13px;color:var(--muted);white-space:nowrap;}
+select.type-sel{flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:var(--sans);color:var(--text);background:var(--input-bg);outline:none;cursor:pointer;}
+/* Story blocks */
+.story-out{display:none;flex-direction:column;gap:8px;}
+.story-out.show{display:flex;}
+.c-block{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+.c-head{background:var(--accent);display:flex;align-items:center;justify-content:space-between;padding:6px 12px;}
+.c-label{color:#fff;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;}
+.c-copy{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:11px;font-family:var(--sans);padding:2px 9px;border-radius:4px;cursor:pointer;}
+.c-copy:hover{background:rgba(255,255,255,0.28);}
+.c-text{padding:11px 13px;font-size:var(--fs);line-height:1.65;color:var(--text);background:var(--input-bg);font-family:var(--story-font,var(--mono));white-space:pre-wrap;word-break:break-word;}
+.copy-all{width:100%;padding:11px;background:var(--yes);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.copy-all:hover{opacity:0.87;}
+.copy-all.done{background:#0F3A0F;}
+/* Reminder */
+.reminder{display:none;padding:11px 13px;background:var(--yesbg);border:1px solid var(--yesbdr);border-radius:var(--radius);}
+.reminder.show{display:block;}
+.reminder-title{font-size:13px;font-weight:600;color:var(--yestxt);margin-bottom:6px;}
+.reminder ol{padding-left:18px;}
+.reminder li{font-size:13px;color:var(--yestxt);margin-bottom:4px;line-height:1.45;}
+/* Divider */
+.divider{height:1px;background:var(--border);}
+/* Saved stories */
+.saved-list{display:flex;flex-direction:column;gap:6px;}
+.saved-item{border:1px solid var(--border);border-radius:var(--radius);background:var(--input-bg);cursor:pointer;overflow:hidden;transition:border-color 0.15s;}
+.saved-item:hover{border-color:var(--accent);}
+.saved-top{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;}
+.saved-ro{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
+.saved-meta{display:flex;align-items:center;gap:8px;}
+.saved-count{font-size:11px;background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;}
+.saved-date{font-size:11px;color:var(--muted);}
+.saved-del{background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1;font-family:var(--sans);}
+.saved-del:hover{background:var(--redbg);}
+.saved-preview{padding:0 12px 8px;font-size:12px;color:var(--muted);line-height:1.4;border-top:1px solid var(--border);padding-top:6px;font-style:italic;}
+.empty{font-size:13px;color:var(--muted);font-style:italic;}
+/* Version picker overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-end;justify-content:center;}
+.overlay.show{display:flex;}
+.version-sheet{background:var(--surface);width:100%;max-width:640px;border-radius:var(--radius) var(--radius) 0 0;padding:20px 16px 32px;max-height:80vh;overflow-y:auto;}
+.version-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.version-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.version-list{display:flex;flex-direction:column;gap:8px;}
+.version-item{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--input-bg);}
+.version-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;}
+.version-head:hover{background:var(--hover-bg);}
+.version-left{display:flex;align-items:center;gap:8px;}
+.version-num{font-size:12px;font-weight:600;color:var(--accent);}
+.version-type{font-size:11px;background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;text-transform:capitalize;}
+.version-time{font-size:11px;color:var(--muted);}
+.version-actions{display:flex;gap:6px;align-items:center;}
+.version-load{background:var(--accent);border:none;color:#fff;font-size:12px;font-family:var(--sans);padding:4px 10px;border-radius:var(--radius-sm);cursor:pointer;}
+.version-load:hover{opacity:0.85;}
+.version-del{background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:4px;}
+.version-del:hover{background:var(--redbg);}
+.version-preview{padding:8px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);font-style:italic;line-height:1.4;}
+.overlay-close{width:100%;margin-top:12px;padding:10px;background:var(--border);color:var(--text);border:none;border-radius:var(--radius);font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;}
+.overlay-close:hover{opacity:0.8;}
+.new-ver-btn{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;}
+.new-ver-btn:hover{opacity:0.87;}
+/* Settings */
+.settings-section{display:flex;flex-direction:column;gap:18px;}
+.sg{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.sg-title{font-size:12px;font-weight:600;color:var(--muted);padding:9px 14px;background:var(--input-bg);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em;}
+.sg-body{padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+.setting-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.setting-label{font-size:14px;color:var(--text);font-weight:500;}
+.setting-note{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.api-key-wrap{position:relative;margin-top:8px;}
+.api-key-input{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 40px 9px 11px;font-size:13px;font-family:var(--mono);color:var(--text);background:var(--input-bg);outline:none;}
+.api-key-input:focus{border-color:var(--accent);}
+.api-key-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px;}
+.key-btns{display:flex;gap:8px;margin-top:8px;}
+.save-key-btn{padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;}
+.save-key-btn:hover{opacity:0.87;}
+.remove-key-btn{padding:8px 16px;background:none;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--sans);font-size:13px;color:var(--red);cursor:pointer;}
+.remove-key-btn:hover{background:var(--redbg);}
+select.sel{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:13px;font-family:var(--sans);color:var(--text);background:var(--input-bg);outline:none;cursor:pointer;}
+.save-prefs-btn{width:100%;padding:10px;background:var(--yes);color:#fff;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.save-prefs-btn:hover{opacity:0.87;}
+.save-prefs-btn.saved-flash{background:#0F3A0F;}
+.danger-btn{padding:8px 16px;background:none;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--sans);font-size:13px;color:var(--red);cursor:pointer;}
+.danger-btn:hover{background:var(--redbg);}
+/* Accent swatches */
+.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color 0.15s;}
+.swatch.active{border-color:var(--text);}
+/* Help */
+.help-section{display:flex;flex-direction:column;gap:16px;}
+.help-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.help-body{font-size:14px;color:var(--subtext);line-height:1.6;}
+.help-tip{padding:10px 13px;background:var(--infobg);border:1px solid var(--infobdr);border-radius:var(--radius);font-size:13px;color:var(--infotxt);line-height:1.5;}
+.help-example{padding:10px 13px;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--mono);color:var(--subtext);line-height:1.6;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hdr">
+  <div>
+    <div class="hdr-title">Workshop Story Tool</div>
+    <div class="hdr-sub">AI-assisted 3 C's story writer</div>
+  </div>
+  <div class="hdr-btns">
+    <button class="hdr-btn" id="btnStory" onclick="showPanel('story')" style="display:none">Story</button>
+    <button class="hdr-btn" id="btnHelp" onclick="showPanel('help')">Help</button>
+    <button class="hdr-btn" id="btnSettings" onclick="showPanel('settings')">Settings</button>
+  </div>
+</div>
+
+<div class="api-bar none" id="apiBar">
+  <span class="api-dot"></span>
+  <span id="apiBarText">No API key configured — tap Settings to add one.</span>
+</div>
+
+<div class="ro-bar">
+  <span class="ro-label">RO number:</span>
+  <input class="ro-input" id="roIn" type="text" placeholder="e.g. 12345" maxlength="20" autocomplete="off" spellcheck="false">
+  <button class="ro-btn" onclick="loadRO()">Load</button>
+  <button class="clear-btn" onclick="clearAll()">Clear</button>
+  <span class="ro-status" id="roStatus"></span>
+</div>
+
+<!-- Story panel -->
+<div class="panel active" id="panelStory">
+  <div class="panel-body">
+    <div>
+      <div class="slabel">Describe the fault</div>
+      <div class="alert danger" id="noRo"><span class="alert-title">Enter an RO number above before generating.</span></div>
+      <textarea class="inp" id="techIn" oninput="updateWordCount()" placeholder="Tell me what the customer complained about, what you found wrong, and what needs to be done.&#10;&#10;Example: customer say car shake when braking. found warped front rotor. replace rotor and pads."></textarea>
+      <div class="word-hint" id="wordHint">0 words</div>
+      <div class="type-row">
+        <span class="type-label">Job type:</span>
+        <select class="type-sel" id="jobType">
+          <option value="Diagnostic">Diagnostic</option>
+          <option value="General Service">General Service</option>
+          <option value="Repair">Repair</option>
+          <option value="Parts Install">Parts Install</option>
+          <option value="Road Test">Road Test</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()"><span class="mic-dot"></span><span id="voiceLabel">Speak</span></button>
+        <button class="gen-btn" id="genBtn" onclick="generate()">Generate story</button>
+      </div>
+      <div class="voice-note" id="voiceNote">Voice input not supported on this browser — please type.</div>
+    </div>
+    <div class="loading" id="loading"><div class="spin"></div>Writing your story...</div>
+    <div class="alert warn" id="needsMore"><div class="alert-title">More detail needed</div><div id="needsMoreText"></div></div>
+    <div class="story-out" id="storyOut">
+      <div class="c-block"><div class="c-head"><span class="c-label">Concern</span><button class="c-copy" onclick="copySection('cConcern','CONCERN')">Copy</button></div><div class="c-text" id="cConcern"></div></div>
+      <div class="c-block"><div class="c-head"><span class="c-label">Cause</span><button class="c-copy" onclick="copySection('cCause','CAUSE')">Copy</button></div><div class="c-text" id="cCause"></div></div>
+      <div class="c-block"><div class="c-head"><span class="c-label">Correction</span><button class="c-copy" onclick="copySection('cCorrection','CORRECTION')">Copy</button></div><div class="c-text" id="cCorrection"></div></div>
+      <button class="copy-all" id="copyAll" onclick="copyStory()">Copy full story to clipboard</button>
+    </div>
+    <div class="reminder" id="reminder">
+      <div class="reminder-title">Next steps</div>
+      <ol>
+        <li>Paste the story into Eclipse on the correct RO.</li>
+        <li>Tick off the story items on your cover sheet.</li>
+        <li>Check all diagnostic photos are taken and saved.</li>
+        <li>Hand your cover sheet to the Foreman for sign-off.</li>
+      </ol>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="slabel">Saved stories</div>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings panel -->
+<div class="panel" id="panelSettings">
+  <div class="panel-body">
+    <div class="settings-section">
+
+      <div class="sg">
+        <div class="sg-title">API key</div>
+        <div class="sg-body">
+          <div>
+            <div class="setting-label">Anthropic API key</div>
+            <div class="setting-note">Saved to this device only. Used only to call the Anthropic API.</div>
+            <div class="api-key-wrap">
+              <input class="api-key-input" id="apiKeyIn" type="password" placeholder="sk-ant-api03-...">
+              <button class="api-key-toggle" onclick="toggleKeyVis()" title="Show/hide">&#128065;</button>
+            </div>
+            <div class="key-btns">
+              <button class="save-key-btn" onclick="saveKey()">Save key</button>
+              <button class="remove-key-btn" onclick="clearKey()">Remove key</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">Display</div>
+        <div class="sg-body">
+          <div class="setting-row">
+            <div><div class="setting-label">Theme</div></div>
+            <select class="sel" id="themeSel">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="warm">Warm</option>
+              <option value="high-contrast">High contrast</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Text size</div></div>
+            <select class="sel" id="fontSizeSel">
+              <option value="12">Small</option>
+              <option value="14" selected>Medium</option>
+              <option value="16">Large</option>
+              <option value="18">Extra large</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Spacing</div></div>
+            <select class="sel" id="spacingSel">
+              <option value="0.8">Compact</option>
+              <option value="1" selected>Comfortable</option>
+              <option value="1.3">Spacious</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Story font</div></div>
+            <select class="sel" id="storyFontSel">
+              <option value="mono">Monospace</option>
+              <option value="sans">Regular</option>
+            </select>
+          </div>
+          <div>
+            <div class="setting-label" style="margin-bottom:8px">Accent colour</div>
+            <div class="swatches" id="swatches"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">Voice input</div>
+        <div class="sg-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Recognition language</div>
+              <div class="setting-note">Match to the technician's accent for best results.</div>
+            </div>
+            <select class="sel" id="langSel">
+              <option value="en-AU">English (Australian)</option>
+              <option value="en-IN">English (Indian)</option>
+              <option value="en-GB">English (British)</option>
+              <option value="en-US">English (US)</option>
+              <option value="si-LK">Sinhala</option>
+              <option value="ta-LK">Tamil</option>
+            </select>
+          </div>
+          <div class="alert info show">For Sri Lankan technicians speaking English, English (Indian) gives the best accuracy.</div>
+        </div>
+      </div>
+
+      <div class="sg">
+        <div class="sg-title">Data</div>
+        <div class="sg-body">
+          <button class="danger-btn" onclick="clearAllStories()">Clear all saved stories</button>
+        </div>
+      </div>
+
+      <button class="save-prefs-btn" id="savePrefsBtn" onclick="savePrefs()">Save preferences</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- Help panel -->
+<div class="panel" id="panelHelp">
+  <div class="panel-body">
+    <div class="help-section">
+      <div>
+        <div class="help-title">How to use this tool</div>
+        <div class="help-body">Enter your RO number, select the job type, describe the fault in your own words and tap Generate. The AI writes a clean 3 C's story. Copy and paste into Eclipse on the correct job.</div>
+      </div>
+      <div>
+        <div class="help-title">What are the 3 C's?</div>
+        <div class="help-example">CONCERN:    What the customer said was wrong.
+CAUSE:      What you found when you looked at it.
+CORRECTION: What was done to fix it.</div>
+      </div>
+      <div>
+        <div class="help-title">Tips for describing the fault</div>
+        <div class="help-tip" style="margin-bottom:8px">You do not need perfect English. Just tell the tool what happened and it will clean it up.</div>
+        <div class="help-example">customer say noise from front when turn left. found worn CV joint. replaced CV joint and boot.</div>
+        <div style="height:6px"></div>
+        <div class="help-example">engine light on. scan show misfire cylinder 3. replace ignition coil cylinder 3. light clear.</div>
+        <div style="height:6px"></div>
+        <div class="help-example">customer say AC not cold. found gas low and leak at condenser. replace condenser and regas.</div>
+      </div>
+      <div>
+        <div class="help-title">Multiple stories per RO</div>
+        <div class="help-body">Each time you generate for the same RO a new version is saved automatically. Tap Load or tap the RO in the saved list to see all versions and choose which one to load or delete.</div>
+      </div>
+      <div>
+        <div class="help-title">Voice input</div>
+        <div class="help-body">Tap Speak and talk normally. Tap Stop when finished. Go to Settings to change the voice language if transcription is not accurate.</div>
+      </div>
+      <div>
+        <div class="help-title">After generating</div>
+        <div class="help-body">Use the green button to copy the full story, or Copy on each section individually. Paste into Eclipse, tick your cover sheet, hand to the Foreman.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Version picker overlay -->
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+  <div class="version-sheet" id="versionSheet">
+    <div class="version-title" id="versionTitle">Stories for RO</div>
+    <div class="version-sub">Select a version to load, or generate a new story.</div>
+    <button class="new-ver-btn" onclick="closeOverlayDirect();generate()">Generate new story for this RO</button>
+    <div class="version-list" id="versionList"></div>
+    <button class="overlay-close" onclick="closeOverlayDirect()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ── Storage ───────────────────────────────────────────────────────
+var STORE="ws_stories_v3",KEY_S="ws_api_key",LANG_S="ws_lang",PREFS_S="ws_prefs";
+function lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function lsGetJSON(){try{return JSON.parse(localStorage.getItem(STORE)||"{}");}catch(e){return{};}}
+function lsSetJSON(d){try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){}}
+function getPrefs(){try{return JSON.parse(localStorage.getItem(PREFS_S)||"{}");}catch(e){return{};}}
+function setPrefs(p){try{localStorage.setItem(PREFS_S,JSON.stringify(p));}catch(e){}}
+
+// ── Themes ────────────────────────────────────────────────────────
+var THEMES={
+  light:{bg:"#F3F1ED",surface:"#FFFFFF",border:"#DEDAD2",muted:"#6B6560",text:"#1A1A1A",subtext:"#5A5550","input-bg":"#FAFAF8","hover-bg":"#F0EDE8",placeholder:"#BBBBAA",yes:"#1A4D1A",yesbg:"#EAF4EC",yestxt:"#1A4D1A",yesbdr:"#6AAE6A",red:"#8B1A1A",redbg:"#FDECEA",redtxt:"#791F1F",redbdr:"#E57373",warn:"#7A5000",warnbg:"#FFF8E6",warntxt:"#7A5000",warnbdr:"#F9A825",infobg:"#E8F1FA",infotxt:"#0D3A6B",infobdr:"#90BBE0"},
+  dark:{bg:"#1A1A1A",surface:"#252525",border:"#3A3A3A",muted:"#888888",text:"#EEEEEE",subtext:"#AAAAAA","input-bg":"#2E2E2E","hover-bg":"#333333",placeholder:"#666666",yes:"#4CAF50",yesbg:"#1A3320",yestxt:"#81C784",yesbdr:"#388E3C",red:"#EF5350",redbg:"#2D1515",redtxt:"#EF9A9A",redbdr:"#C62828",warn:"#FFB74D",warnbg:"#2D2000",warntxt:"#FFB74D",warnbdr:"#E65100",infobg:"#0D2137",infotxt:"#90BBE0",infobdr:"#1565C0"},
+  warm:{bg:"#F5EFE6",surface:"#FDF8F2",border:"#E0D5C5",muted:"#8A7560",text:"#2C1F0E",subtext:"#6B5540","input-bg":"#FAF5ED","hover-bg":"#F0E8D8",placeholder:"#C0AA90",yes:"#2E6B2E",yesbg:"#EEF5E8",yestxt:"#2E6B2E",yesbdr:"#7AB87A",red:"#8B2020",redbg:"#F9EDED",redtxt:"#7A1A1A",redbdr:"#E07070",warn:"#7A4F00",warnbg:"#FFF5E0",warntxt:"#7A4F00",warnbdr:"#F0A820",infobg:"#E8F0FA",infotxt:"#0D3060",infobdr:"#8AAADE"},
+  "high-contrast":{bg:"#FFFFFF",surface:"#FFFFFF",border:"#000000",muted:"#444444",text:"#000000",subtext:"#222222","input-bg":"#F5F5F5","hover-bg":"#EEEEEE",placeholder:"#888888",yes:"#005500",yesbg:"#E0FFE0",yestxt:"#003300",yesbdr:"#007700",red:"#990000",redbg:"#FFE0E0",redtxt:"#660000",redbdr:"#CC0000",warn:"#664400",warnbg:"#FFF0CC",warntxt:"#442200",warnbdr:"#CC8800",infobg:"#E0EEFF",infotxt:"#002266",infobdr:"#0044CC"}
+};
+
+var ACCENTS=[
+  {name:"Navy",    light:"#1C3557",dark:"#4A90D9"},
+  {name:"Green",   light:"#1A5C2A",dark:"#4CAF50"},
+  {name:"Slate",   light:"#3D4F6A",dark:"#7A9BBF"},
+  {name:"Burgundy",light:"#6B1A2A",dark:"#E57373"},
+  {name:"Teal",    light:"#0D5C5C",dark:"#4DB6AC"},
+  {name:"Charcoal",light:"#2D2D2D",dark:"#BBBBBB"},
+];
+
+var currentTheme="light", currentAccentIdx=0;
+
+function applyTheme(themeName, accentIdx, save){
+  currentTheme=themeName;
+  currentAccentIdx=accentIdx===undefined?currentAccentIdx:accentIdx;
+  var t=THEMES[themeName]||THEMES.light;
+  var isDark=(themeName==="dark");
+  var accent=ACCENTS[currentAccentIdx]||ACCENTS[0];
+  var accentColor=isDark?accent.dark:accent.light;
+  var accent2=shadeColor(accentColor,-20);
+  var vars=Object.assign({},t,{accent:accentColor,accent2:accent2});
+  var css=":root{";
+  Object.keys(vars).forEach(function(k){css+="--"+k+":"+vars[k]+";";});
+  css+="}";
+  document.getElementById("themeStyle").textContent=css;
+  document.querySelectorAll(".swatch").forEach(function(s,i){
+    s.classList.toggle("active",i===currentAccentIdx);
+  });
+  if(save) persistPrefs();
+}
+
+function shadeColor(col, pct){
+  var num=parseInt(col.replace("#",""),16),
+      amt=Math.round(2.55*pct),
+      R=Math.max(0,Math.min(255,(num>>16)+amt)),
+      G=Math.max(0,Math.min(255,(num>>8&0x00FF)+amt)),
+      B=Math.max(0,Math.min(255,(num&0x0000FF)+amt));
+  return "#"+((1<<24)+(R<<16)+(G<<8)+B).toString(16).slice(1);
+}
+
+function buildSwatches(){
+  var el=document.getElementById("swatches");
+  el.innerHTML="";
+  ACCENTS.forEach(function(a,i){
+    var s=document.createElement("div");
+    s.className="swatch"+(i===currentAccentIdx?" active":"");
+    s.style.background=a.light;
+    s.title=a.name;
+    s.onclick=function(){applyTheme(currentTheme,i,false);};
+    el.appendChild(s);
+  });
+}
+
+function savePrefs(){
+  var prefs={
+    theme:document.getElementById("themeSel").value,
+    fs:document.getElementById("fontSizeSel").value,
+    spacing:document.getElementById("spacingSel").value,
+    storyFont:document.getElementById("storyFontSel").value,
+    accent:currentAccentIdx,
+    lang:document.getElementById("langSel").value
+  };
+  setPrefs(prefs);
+  lsSet(LANG_S,prefs.lang);
+  applyPrefs(prefs);
+  var btn=document.getElementById("savePrefsBtn");
+  btn.textContent="Saved!";
+  btn.classList.add("saved-flash");
+  setTimeout(function(){btn.textContent="Save preferences";btn.classList.remove("saved-flash");},2000);
+}
+
+function persistPrefs(){
+  var prefs=getPrefs();
+  prefs.accent=currentAccentIdx;
+  setPrefs(prefs);
+}
+
+function applyPrefs(prefs){
+  if(!prefs) return;
+  if(prefs.theme){ document.getElementById("themeSel").value=prefs.theme; }
+  if(prefs.fs){ document.getElementById("fontSizeSel").value=prefs.fs; document.documentElement.style.setProperty("--fs",prefs.fs+"px"); }
+  if(prefs.spacing){ document.getElementById("spacingSel").value=prefs.spacing; document.documentElement.style.setProperty("--spacing",prefs.spacing); }
+  if(prefs.storyFont){ document.getElementById("storyFontSel").value=prefs.storyFont; document.documentElement.style.setProperty("--story-font",prefs.storyFont==="mono"?"var(--mono)":"var(--sans)"); }
+  if(prefs.lang){ document.getElementById("langSel").value=prefs.lang; if(recognition)recognition.lang=prefs.lang; }
+  applyTheme(prefs.theme||"light", prefs.accent||0, false);
+}
+
+// ── API key ───────────────────────────────────────────────────────
+function getKey(){return lsGet(KEY_S);}
+function saveKey(){var v=document.getElementById("apiKeyIn").value.trim();if(!v){alert("Please enter an API key.");return;}lsSet(KEY_S,v);document.getElementById("apiKeyIn").value="";updateApiBar();alert("API key saved.");}
+function clearKey(){if(!confirm("Remove the saved API key?"))return;lsDel(KEY_S);updateApiBar();}
+function toggleKeyVis(){var i=document.getElementById("apiKeyIn");i.type=i.type==="password"?"text":"password";}
+function updateApiBar(){var bar=document.getElementById("apiBar"),txt=document.getElementById("apiBarText");if(getKey()){bar.className="api-bar ok";txt.textContent="API key configured — ready to generate stories.";}else{bar.className="api-bar none";txt.textContent="No API key configured — tap Settings to add one.";}}
+
+// ── Panel nav ─────────────────────────────────────────────────────
+function showPanel(p){
+  ["panelStory","panelSettings","panelHelp"].forEach(function(id){document.getElementById(id).classList.remove("active");});
+  ["btnStory","btnSettings","btnHelp"].forEach(function(id){var b=document.getElementById(id);if(b)b.classList.remove("active");});
+  var map={story:"panelStory",settings:"panelSettings",help:"panelHelp"};
+  var bmap={story:"btnStory",settings:"btnSettings",help:"btnHelp"};
+  document.getElementById(map[p]).classList.add("active");
+  var ab=document.getElementById(bmap[p]);if(ab)ab.classList.add("active");
+  var sb=document.getElementById("btnStory");if(sb)sb.style.display=(p==="story")?"none":"block";
+}
+
+// ── Storage: versioned stories ───────────────────────────────────
+// Structure: { roNumber: [ { id, type, concern, cause, correction, raw, date, ts }, ... ] }
+function getStories(){return lsGetJSON();}
+function saveVersion(ro,type,concern,cause,correction,raw){
+  var d=getStories();
+  if(!d[ro])d[ro]=[];
+  d[ro].push({id:Date.now(),type:type,concern:concern,cause:cause,correction:correction,raw:raw,date:new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"2-digit",year:"numeric"}),time:new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"}),ts:Date.now()});
+  lsSetJSON(d);
+  renderSaved();
+}
+function deleteVersion(ro,id){
+  var d=getStories();
+  if(!d[ro])return;
+  d[ro]=d[ro].filter(function(v){return v.id!==id;});
+  if(!d[ro].length)delete d[ro];
+  lsSetJSON(d);
+  renderSaved();
+  renderVersionList(ro);
+}
+function deleteAllRO(ro){
+  var d=getStories();
+  delete d[ro];
+  lsSetJSON(d);
+  renderSaved();
+}
+
+function renderSaved(){
+  var d=getStories(),keys=Object.keys(d),el=document.getElementById("savedList");
+  if(!keys.length){el.innerHTML='<div class="empty">No saved stories yet.</div>';return;}
+  el.innerHTML="";
+  keys.reverse().forEach(function(ro){
+    var versions=d[ro];
+    var latest=versions[versions.length-1];
+    var item=document.createElement("div");
+    item.className="saved-item";
+    var prev=latest.concern?(latest.concern.length>80?latest.concern.substring(0,80)+"...":latest.concern):"";
+    item.innerHTML=
+      '<div class="saved-top">'+
+        '<span class="saved-ro">RO '+esc(ro)+'</span>'+
+        '<div class="saved-meta">'+
+          '<span class="saved-count">'+versions.length+' version'+(versions.length>1?"s":"")+'</span>'+
+          '<span class="saved-date">'+esc(latest.date)+'</span>'+
+          '<button class="saved-del" onclick="event.stopPropagation();confirmDelRO(\''+esc(ro)+'\')" title="Delete all">&#10005;</button>'+
+        '</div>'+
+      '</div>'+
+      (prev?'<div class="saved-preview">'+esc(prev)+'</div>':"");
+    item.addEventListener("click",function(){openVersionPicker(ro);});
+    el.appendChild(item);
+  });
+}
+
+function confirmDelRO(ro){
+  if(!confirm("Delete all saved stories for RO "+ro+"?"))return;
+  deleteAllRO(ro);
+}
+
+// ── Version picker overlay ───────────────────────────────────────
+var overlayRO=null;
+function openVersionPicker(ro){
+  overlayRO=ro;
+  document.getElementById("versionTitle").textContent="Stories for RO "+ro;
+  renderVersionList(ro);
+  document.getElementById("overlay").classList.add("show");
+}
+function renderVersionList(ro){
+  var d=getStories(),el=document.getElementById("versionList");
+  if(!ro||!d[ro]){el.innerHTML='<div class="empty" style="padding:12px 0">No versions found.</div>';return;}
+  var versions=d[ro].slice().reverse();
+  el.innerHTML="";
+  versions.forEach(function(v,i){
+    var item=document.createElement("div");
+    item.className="version-item";
+    var prev=v.concern?(v.concern.length>80?v.concern.substring(0,80)+"...":v.concern):"";
+    item.innerHTML=
+      '<div class="version-head">'+
+        '<div class="version-left">'+
+          '<span class="version-num">v'+(versions.length-i)+'</span>'+
+          '<span class="version-type">'+esc(v.type||"Diagnostic")+'</span>'+
+          '<span class="version-time">'+esc(v.date)+" "+esc(v.time||"")+'</span>'+
+        '</div>'+
+        '<div class="version-actions">'+
+          '<button class="version-load" onclick="loadVersion(\''+ro+'\','+v.id+')">Load</button>'+
+          '<button class="version-del" onclick="confirmDelVersion(\''+ro+'\','+v.id+')" title="Delete">&#10005;</button>'+
+        '</div>'+
+      '</div>'+
+      (prev?'<div class="version-preview">'+esc(prev)+'</div>':"");
+    el.appendChild(item);
+  });
+}
+function loadVersion(ro,id){
+  var d=getStories();
+  if(!d[ro])return;
+  var v=d[ro].find(function(x){return x.id===id;});
+  if(!v)return;
+  document.getElementById("roIn").value=ro;
+  document.getElementById("roStatus").textContent="Loaded";
+  document.getElementById("noRo").classList.remove("show");
+  document.getElementById("techIn").value=v.raw||"";
+  if(v.type)document.getElementById("jobType").value=v.type;
+  updateWordCount();
+  showStory(v.concern,v.cause,v.correction);
+  closeOverlayDirect();
+  showPanel("story");
+}
+function confirmDelVersion(ro,id){
+  if(!confirm("Delete this version?"))return;
+  deleteVersion(ro,id);
+}
+function closeOverlay(e){if(e.target===document.getElementById("overlay"))closeOverlayDirect();}
+function closeOverlayDirect(){document.getElementById("overlay").classList.remove("show");overlayRO=null;}
+
+// ── RO controls ───────────────────────────────────────────────────
+function roVal(){return document.getElementById("roIn").value.trim();}
+function loadRO(){
+  var ro=roVal();
+  if(!ro){document.getElementById("roStatus").textContent="Enter RO first";return;}
+  var d=getStories();
+  if(d[ro]&&d[ro].length){
+    if(d[ro].length===1){loadVersion(ro,d[ro][0].id);}
+    else{openVersionPicker(ro);}
+  } else {
+    document.getElementById("roStatus").textContent="New RO";
+    document.getElementById("noRo").classList.remove("show");
+    clearOut();
+  }
+}
+function clearAll(){
+  document.getElementById("roIn").value="";
+  document.getElementById("roStatus").textContent="";
+  document.getElementById("techIn").value="";
+  updateWordCount();
+  document.getElementById("noRo").classList.remove("show");
+  clearOut();
+}
+
+function updateWordCount(){var v=document.getElementById("techIn").value.trim(),w=v?v.split(/\s+/).length:0;document.getElementById("wordHint").textContent=w+" word"+(w===1?"":"s");}
+
+// ── Voice ─────────────────────────────────────────────────────────
+var recognition=null,isRec=false;
+function initVoice(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById("voiceNote").style.display="block";document.getElementById("voiceBtn").style.display="none";return;}
+  recognition=new SR();recognition.continuous=true;recognition.interimResults=true;recognition.lang=lsGet(LANG_S)||"en-AU";
+  var existing="";
+  recognition.onresult=function(e){var interim="",fin="";for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}existing+=fin;document.getElementById("techIn").value=existing+(interim?" "+interim:"");updateWordCount();};
+  recognition.onend=function(){if(isRec){try{recognition.start();}catch(e){}}};
+  recognition.onerror=function(e){if(e.error!=="no-speech")stopVoice();};
+}
+function toggleVoice(){isRec?stopVoice():startVoice();}
+function startVoice(){if(!recognition)return;isRec=true;try{recognition.start();}catch(e){}document.getElementById("voiceBtn").classList.add("rec");document.getElementById("voiceLabel").textContent="Stop";}
+function stopVoice(){isRec=false;if(recognition){try{recognition.stop();}catch(e){}}document.getElementById("voiceBtn").classList.remove("rec");document.getElementById("voiceLabel").textContent="Speak";}
+
+// ── Generate ──────────────────────────────────────────────────────
+async function generate(){
+  var ro=roVal(),input=document.getElementById("techIn").value.trim(),type=document.getElementById("jobType").value;
+  if(!ro){document.getElementById("noRo").classList.add("show");return;}
+  document.getElementById("noRo").classList.remove("show");
+  if(!input){alert("Please describe the fault before generating.");return;}
+  var key=getKey();
+  if(!key){alert("No API key configured. Go to Settings to add your Anthropic API key.");return;}
+  if(isRec)stopVoice();
+  clearOut();
+  document.getElementById("loading").classList.add("show");
+  document.getElementById("genBtn").disabled=true;
+  var sys=[
+    "You are a warranty story writing assistant for a car dealership workshop. Your only job is to write vehicle fault stories in the 3 C's format.",
+    "Output ONLY valid JSON with no other text:",
+    '{"status":"ok","concern":"...","cause":"...","correction":"..."}',
+    "OR if genuinely missing essential information:",
+    '{"status":"needs_more","message":"one or two specific questions only"}',
+    "Rules:",
+    "- Concern: one sentence - what the customer reported.",
+    "- Cause: one sentence - what the technician found to be the root cause.",
+    "- Correction: one sentence - what was done or is required. If repair is complete, end with: Confirmed satisfactory operation following repair. If diagnosis only, omit this.",
+    "- Keep every section to one clear sentence. Brief is better.",
+    "- Use plain workshop English. No jargon or abbreviations.",
+    "- Never ask for odometer, dates, vehicle details or anything recorded elsewhere.",
+    "- Only return needs_more if you genuinely cannot determine the symptom, root cause or required repair.",
+    "- Interpret limited English generously. Do not invent facts.",
+    "- The job type is: "+type+". Use this context when writing the correction."
+  ].join("\n");
+  try{
+    var resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,system:sys,messages:[{role:"user",content:"Technician description: "+input}]})});
+    var data=await resp.json();
+    document.getElementById("loading").classList.remove("show");
+    document.getElementById("genBtn").disabled=false;
+    if(data.error){showErr("API error: "+data.error.message);return;}
+    if(!data.content||!data.content[0]){showErr("No response. Please try again.");return;}
+    var raw=data.content[0].text||"";
+    var parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,"").trim());}catch(e){showErr("Could not read response. Please try again.");return;}
+    if(parsed.status==="needs_more"){document.getElementById("needsMore").classList.add("show");document.getElementById("needsMoreText").textContent=parsed.message;return;}
+    if(parsed.status==="ok"){showStory(parsed.concern,parsed.cause,parsed.correction);saveVersion(ro,type,parsed.concern,parsed.cause,parsed.correction,input);return;}
+    showErr("Unexpected response. Please try again.");
+  }catch(e){document.getElementById("loading").classList.remove("show");document.getElementById("genBtn").disabled=false;showErr("Connection error. Check your internet and try again.");}
+}
+
+function showStory(c,ca,co){
+  document.getElementById("cConcern").textContent=c;
+  document.getElementById("cCause").textContent=ca;
+  document.getElementById("cCorrection").textContent=co;
+  document.getElementById("storyOut").classList.add("show");
+  document.getElementById("reminder").classList.add("show");
+}
+function clearOut(){
+  ["storyOut","reminder","needsMore"].forEach(function(id){document.getElementById(id).classList.remove("show");});
+  document.getElementById("needsMoreText").textContent="";
+  var ca=document.getElementById("copyAll");ca.classList.remove("done");ca.textContent="Copy full story to clipboard";
+}
+function showErr(msg){document.getElementById("needsMore").classList.add("show");document.getElementById("needsMoreText").textContent=msg;}
+
+// ── Copy ──────────────────────────────────────────────────────────
+function copySection(id,label){doCopy(label+":\n"+document.getElementById(id).textContent);}
+function copyStory(){
+  var c=document.getElementById("cConcern").textContent,ca=document.getElementById("cCause").textContent,co=document.getElementById("cCorrection").textContent;
+  doCopy("CONCERN:\n"+c+"\n\nCAUSE:\n"+ca+"\n\nCORRECTION:\n"+co);
+  var btn=document.getElementById("copyAll");btn.textContent="Copied!";btn.classList.add("done");
+  setTimeout(function(){btn.textContent="Copy full story to clipboard";btn.classList.remove("done");},2500);
+}
+function doCopy(txt){if(navigator.clipboard){navigator.clipboard.writeText(txt).catch(function(){fallbackCopy(txt);});}else{fallbackCopy(txt);}}
+function fallbackCopy(txt){var t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);}
+
+function clearAllStories(){if(!confirm("Clear all saved stories? This cannot be undone."))return;lsDel(STORE);renderSaved();}
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+document.getElementById("roIn").addEventListener("keydown",function(e){if(e.key==="Enter")loadRO();});
+
+// ── Init ──────────────────────────────────────────────────────────
+(function init(){
+  buildSwatches();
+  var prefs=getPrefs();
+  applyPrefs(prefs);
+  updateApiBar();
+  initVoice();
+  renderSaved();
+})();
+</script>
+</body>
+</html>
